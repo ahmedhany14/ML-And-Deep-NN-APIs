@@ -2,6 +2,12 @@ from collections import Counter, defaultdict, OrderedDict
 from queue import Queue, PriorityQueue, LifoQueue, SimpleQueue, SimpleStack
 from bs4 import BeautifulSoup
 from sklearn.base import BaseEstimator, TransformerMixin
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.stem import PorterStemmer
+from nltk.corpus import stopwords
+import re
+import nltk
+import string
 
 
 class Hash:
@@ -61,13 +67,6 @@ class Hash:
         return self.sub(l1, r1) == self.sub(l2, r2)
 
 
-from nltk.tokenize import word_tokenize, sent_tokenize
-from nltk.stem import PorterStemmer
-from nltk.corpus import stopwords
-import re
-import nltk
-import string
-
 class text_processing(BaseEstimator, TransformerMixin):
     def __init__(
         self,
@@ -84,7 +83,7 @@ class text_processing(BaseEstimator, TransformerMixin):
         remove_emails=False,
         remove_emojis=False,
         remove_newlines=False,
-        remove_hashtags=False,        
+        remove_hashtags=False,
     ) -> None:
         self.lower = lower
         self.upper = upper
@@ -92,6 +91,14 @@ class text_processing(BaseEstimator, TransformerMixin):
         self.remove_punctuation = remove_punctuation
         self.remove_stop_words = remove_stop_words
         self.stem_the_words = stem_the_words
+        self.remove_digits = remove_digits
+        self.remove_whitespace = remove_whitespace
+        self.remove_html = remove_html
+        self.remove_urls = remove_urls
+        self.remove_emails = remove_emails
+        self.remove_emojis = remove_emojis
+        self.remove_newlines = remove_newlines
+        self.remove_hashtags = remove_hashtags
         super().__init__()
 
     def fit(self, X, y=None):
@@ -101,6 +108,7 @@ class text_processing(BaseEstimator, TransformerMixin):
     def __lower_text(self, X):
         X = X.apply(lambda x: x.lower())
         return X
+
     # for converting the text to upper case
     def __upper_text(self, X):
         X = X.apply(lambda x: x.upper())
@@ -117,7 +125,8 @@ class text_processing(BaseEstimator, TransformerMixin):
         Then we will remove the special characters
         We will use the isalnum() method to check if the word is alphanumeric
         At the end we will join the words to form a text
-    """    
+    """
+
     def __remove_spec(self, X):
         words = self.__TextToWord(X)
         fixed_words = []
@@ -125,6 +134,7 @@ class text_processing(BaseEstimator, TransformerMixin):
             if w.isalnum():
                 fixed_words.append(w)
         return " ".join(fixed_words)
+
     def __Remove_Special_Characters(self, X):
         X = X.apply(self.__remove_spec)
         return X
@@ -136,6 +146,7 @@ class text_processing(BaseEstimator, TransformerMixin):
         We will use the string.punctuation to get all the punctuation
         At the end we will join the words to form a text
     """
+
     def __remove_puncs(self, X):
         words = self.__TextToWord(X)
         punctuation = set(string.punctuation)
@@ -144,6 +155,7 @@ class text_processing(BaseEstimator, TransformerMixin):
             if not punctuation.__contains__(w):
                 fixed_words.append(w)
         return " ".join(fixed_words)
+
     def __Remove_Punctuation(self, X):
         X = X.apply(self.__remove_puncs)
         return X
@@ -154,7 +166,8 @@ class text_processing(BaseEstimator, TransformerMixin):
         Then we will remove the stop words
         We will use the nltk stopwords to get all the stop words
         At the end we will join the words to form a text
-    """    
+    """
+
     def __remove_stop(self, X):
         stop_words = set(stopwords.words("english"))
         words = self.__TextToWord(X)
@@ -163,17 +176,19 @@ class text_processing(BaseEstimator, TransformerMixin):
             if not stop_words.__contains__(w):
                 fixed_words.append(w)
         return " ".join(fixed_words)
+
     def __Remove_stop_words(self, X):
         X = X.apply(self.__remove_stop)
         return X
 
     # for Stemming the words
     """
-    First we need to convert the text to words
-    Then we will stem the words
-    We will use the PorterStemmer to stem the words
-    At the end we will join the words to form a text    
-    """    
+        First we need to convert the text to words
+        Then we will stem the words
+        We will use the PorterStemmer to stem the words
+        At the end we will join the words to form a text    
+    """
+
     def __stem_text(self, text):
         stemmer = PorterStemmer()
         words = self.__TextToWord(text)
@@ -181,8 +196,120 @@ class text_processing(BaseEstimator, TransformerMixin):
         for w in words:
             stemmed_words.append(stemmer.stem(w))
         return " ".join(stemmed_words)
+
     def __Stemming(self, X):
         X = X.apply(self.__stem_text)
+        return X
+
+    # for removing the digits from text
+    """
+        I will do that by using the regular expression
+        which will remove the digits from the text
+    """
+
+    def __remove_digits(self, text):
+        text = re.sub(r"\d+", "", text)
+        return text
+
+    def __Remove_digits(self, X):
+        X = X.apply(self.__remove_digits)
+
+    # for removing the whitespaces
+    """
+        I will do that by using the strip() method
+        which will remove the whitespaces from the text
+    """
+
+    def __strip_whitespace(self, text):
+        text = text.strip()
+        return text
+
+    def __Remove_whitespace(self, X):
+        X = X.apply(self.__strip_whitespace)
+        return X
+
+    # for removing the html tags
+    """
+        I will do that by using the BeautifulSoup library
+        which will remove the html tags from the text
+    """
+
+    def __html(self, text):
+        soup = BeautifulSoup(text, "html.parser")
+        text = soup.get_text()
+        return text
+
+    def __Remove_html(self, X):
+        X = X.apply(self.__html)
+        return X
+
+    # for removing the urls
+    """
+        I will do that by using the regular expression
+        which will remove the urls from the text
+    """
+
+    def __remove_url(self, text):
+        text = re.sub(r"http\S+", "", text)
+        return text
+
+    def __Remove_url(self, X):
+        X = X.apply(self.__remove_url)
+        return X
+
+    # for removing the emails
+    """
+        I will do that by using the regular expression
+        which will remove the emails from the text
+    """
+
+    def __remove_email(self, text):
+        text = re.sub(r"\S+@\S+", "", text)
+        return text
+
+    def __Remove_emails(self, X):
+        X = X.apply(self.__remove_email)
+        return X
+
+    # for removing the emojis
+    """
+        I will do that by using the encode() method
+        which will remove the emojis from the text
+    """
+
+    def __remove_emoji(self, text):
+        text = text.encode("ascii", "ignore").decode("ascii")
+        return text
+
+    def __Remove_emojis(self, X):
+        X = X.apply(self.__remove_emoji)
+        return X
+
+    # for removing the newlines
+    """
+        I will do that by using the replace() method
+    """
+
+    def __remove_newline(self, text):
+        text = text.replace("\n", " ")
+        return text
+
+    def __Remove_newline(self, X):
+        X = X.apply(self.__remove_newline)
+        return X
+
+    # for removing the hashtags
+    """
+        I will do that by using the regular expression
+        which will remove the hashtags from the text
+    """
+
+    def __Remove_hash(self, text):
+        text = re.sub(r"#\S+", "", text)
+        return text
+
+    def __Remove_hashtags(self, X):
+        X = X.apply(self.__Remove_hash)
         return X
 
     # we will apply the text processing based on the parameters
@@ -206,6 +333,24 @@ class text_processing(BaseEstimator, TransformerMixin):
         # will stem the words
         if self.stem_the_words:
             data = self.__Stemming(data)
+        # will remove the digits
+        if self.remove_digits:
+            data = self.__Remove_digits(data)
+        # will remove the whitespaces
+        if self.remove_whitespace:
+            data = self.__Remove_whitespace(data)
+        if self.remove_html:
+            data = self.__Remove_html(data)
+        if self.remove_urls:
+            data = self.__Remove_url(data)
+        if self.remove_emails:
+            data = self.__Remove_emails(data)
+        if self.remove_emojis:
+            data = self.__Remove_emojis(data)
+        if self.remove_newlines:
+            data = self.__Remove_newline(data)
+        if self.remove_hashtags:
+            data = self.__Remove_hashtags(data)
         return data
 
     def transform(self, X, y=None):
